@@ -59,10 +59,10 @@ class PS3Rover(Revolution):
         self.wname = 'Rover Revolution'
 
         # Set up controller using PyGame
-        pygame.display.init()
+        '''pygame.display.init()
         pygame.joystick.init()
         self.controller = pygame.joystick.Joystick(0)
-        self.controller.init()
+        self.controller.init()'''
 
         # Defaults on startup: no stealth; driving camera
         self.stealthIsOn = False
@@ -78,29 +78,40 @@ class PS3Rover(Revolution):
     def processVideo(self, h264bytes, timestamp_msec):
 
         # Update controller events
-        pygame.event.pump()
+        '''pygame.event.pump()'''
 
         # Toggle stealth mode (lights off / infrared camera on)
-        self.stealthIsOn = self.checkButton(self.stealthIsOn, BUTTON_STEALTH, self.turnStealthOn, self.turnStealthOff)
+        '''self.stealthIsOn = self.checkButton(self.stealthIsOn, BUTTON_STEALTH, self.turnStealthOn, self.turnStealthOff)
+        '''
 
         # Toggle stealth mode (lights off / infrared camera on)
-        self.usingTurret = self.checkButton(self.usingTurret, BUTTON_TURRET, self.useTurretCamera,
+        '''self.usingTurret = self.checkButton(self.usingTurret, BUTTON_TURRET, self.useTurretCamera,
                                             self.useDrivingCamera)
+        '''
 
+        
         # Use right joystick to drive
         axis2 = self.get_axis(2)
         axis3 = self.get_axis(3)
         goslow = False if abs(axis3) > SPEED_THRESH or abs(axis2) > SPEED_THRESH else True
         wheeldir = -self.axis_to_dir(axis3)
         steerdir = self.axis_to_dir(axis2)
-        self.drive(wheeldir, steerdir, goslow)
+        #self.drive(wheeldir, steerdir, goslow)
+
+        # time.sleep(1)
+
+        self.drive(1,-1,True)
+
+        # time.sleep(1)
+
+        # self.drive(-1,0,True)
 
         # Use left joystick to control turret camera
         axis0 = self.axis_to_dir(self.get_axis(AXIS_PAN_HORZ))
         self.moveCameraHorizontal(-axis0)
         axis1 = self.axis_to_dir(self.get_axis(AXIS_PAN_VERT))
         self.moveCameraVertical(-axis1)
-
+        
         # Send video through pipe
         self.tmpfile.write(h264bytes)
 
@@ -119,7 +130,8 @@ class PS3Rover(Revolution):
     # Returns axis value when outside noise threshold, else 0
     def get_axis(self, index):
 
-        value = self.controller.get_axis(index)
+        #value = self.controller.get_axis(index)
+        value = 1
 
         if value > MIN_AXIS_ABSVAL:
             return value
@@ -129,7 +141,7 @@ class PS3Rover(Revolution):
             return 0
 
     # Handles button bounce by waiting a specified time between button presses
-    def checkButton(self, flag, buttonID, onRoutine=None, offRoutine=None):
+    '''def checkButton(self, flag, buttonID, onRoutine=None, offRoutine=None):
         if self.controller.get_button(buttonID):
             if (time.time() - self.lastButtonTime) > MIN_BUTTON_LAG_SEC:
                 self.lastButtonTime = time.time()
@@ -142,7 +154,7 @@ class PS3Rover(Revolution):
                         onRoutine()
                     flag = True
         return flag
-
+    '''
 
 # main -----------------------------------------------------------------------------------
 
