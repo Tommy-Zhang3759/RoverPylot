@@ -35,6 +35,7 @@ DELAY_SEC = 2.5
 from rover import Revolution
 
 import time
+import keyboard
 import pygame
 import sys
 import signal
@@ -74,6 +75,48 @@ class PS3Rover(Revolution):
         # Saves data to video file for display
         self.tmpfile = tmpfile
 
+        #init keyboard status array
+        i = 0
+        for i in range(26):
+            self.keyboard_status.append(False)
+
+    keyboard_status = []
+
+    def _toSet(self, a):
+        return ord(a)-ord("a")
+
+    def keyExpress(self, a):
+        speed = False
+        if(a.event_type == "up"):
+            self.keyboard_status[ord(a.name)-ord("a")] = False
+            #self.drive(0,0,True)
+        elif(a.event_type == "down"):
+            self.keyboard_status[ord(a.name)-ord("a")] = True
+            #self.drive(1,0,True)
+        else:
+            print("jj")
+
+        if(self.keyboard_status[ord("w")-ord("a")] == True and self.keyboard_status[ord("a")-ord("a")] == True):
+            self.drive(1,-1,speed)
+        elif(self.keyboard_status[ord("w")-ord("a")] == True and self.keyboard_status[ord("d")-ord("a")] == True):
+            self.drive(1,1,speed)
+        elif(self.keyboard_status[ord("s")-ord("a")] == True and self.keyboard_status[ord("a")-ord("a")] == True):
+            self.drive(-1,-1,speed)
+        elif(self.keyboard_status[ord("s")-ord("a")] == True and self.keyboard_status[ord("d")-ord("a")] == True):
+            self.drive(-1,1,speed)
+
+        elif(self.keyboard_status[ord("w")-ord("a")] == True):
+            self.drive(1,0,speed)
+        elif(self.keyboard_status[ord("s")-ord("a")] == True):
+            self.drive(-1,0,speed)
+        elif(self.keyboard_status[ord("a")-ord("a")] == True):
+            self.drive(0,-1,speed)
+        elif(self.keyboard_status[ord("d")-ord("a")] == True):
+            self.drive(0,1,speed)
+        else:
+            self.drive(0,0,speed)
+
+ 
     # Automagically called by Rover class
     def processVideo(self, h264bytes, timestamp_msec):
 
@@ -100,7 +143,12 @@ class PS3Rover(Revolution):
 
         # time.sleep(1)
 
-        self.drive(1,-1,True)
+        #self.drive(1,-1,True)
+        keyboard.hook(self.keyExpress)
+
+
+        # if keyboard.is_pressed('E+S+C'):
+        #     print('ESC')
 
         # time.sleep(1)
 
@@ -108,9 +156,9 @@ class PS3Rover(Revolution):
 
         # Use left joystick to control turret camera
         axis0 = self.axis_to_dir(self.get_axis(AXIS_PAN_HORZ))
-        self.moveCameraHorizontal(-axis0)
+        #self.moveCameraHorizontal(-axis0)
         axis1 = self.axis_to_dir(self.get_axis(AXIS_PAN_VERT))
-        self.moveCameraVertical(-axis1)
+        #self.moveCameraVertical(-axis1)
         
         # Send video through pipe
         self.tmpfile.write(h264bytes)
