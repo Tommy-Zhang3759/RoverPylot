@@ -29,14 +29,13 @@ MIN_AXIS_ABSVAL = 0.01
 SPEED_THRESH = 0.5
 
 # For FFPLAY
-FRAMERATE = 20
-DELAY_SEC = 2.5
+FRAMERATE = 16
+DELAY_SEC = 4
 
 from rover import Revolution
 
 import time
 import keyboard
-import pygame
 import sys
 import signal
 import subprocess
@@ -77,45 +76,58 @@ class PS3Rover(Revolution):
 
         #init keyboard status array
         i = 0
-        for i in range(26):
+        for i in range(0xff):
             self.keyboard_status.append(False)
 
     keyboard_status = []
 
-    def _toSet(self, a):
-        return ord(a)-ord("a")
-
-    def keyExpress(self, a):
+    def keyExpress(self, keyEvent):
         speed = False
-        if(a.event_type == "up"):
-            self.keyboard_status[ord(a.name)-ord("a")] = False
-            #self.drive(0,0,True)
-        elif(a.event_type == "down"):
-            self.keyboard_status[ord(a.name)-ord("a")] = True
-            #self.drive(1,0,True)
-        else:
-            print("jj")
+        changed = False
+        if(keyEvent.event_type == "up"):
+            if self.keyboard_status[keyEvent.scan_code] != False:
+                self.keyboard_status[keyEvent.scan_code] = False
+                changed = True
 
-        if(self.keyboard_status[ord("w")-ord("a")] == True and self.keyboard_status[ord("a")-ord("a")] == True):
-            self.drive(1,-1,speed)
-        elif(self.keyboard_status[ord("w")-ord("a")] == True and self.keyboard_status[ord("d")-ord("a")] == True):
-            self.drive(1,1,speed)
-        elif(self.keyboard_status[ord("s")-ord("a")] == True and self.keyboard_status[ord("a")-ord("a")] == True):
-            self.drive(-1,-1,speed)
-        elif(self.keyboard_status[ord("s")-ord("a")] == True and self.keyboard_status[ord("d")-ord("a")] == True):
-            self.drive(-1,1,speed)
-
-        elif(self.keyboard_status[ord("w")-ord("a")] == True):
-            self.drive(1,0,speed)
-        elif(self.keyboard_status[ord("s")-ord("a")] == True):
-            self.drive(-1,0,speed)
-        elif(self.keyboard_status[ord("a")-ord("a")] == True):
-            self.drive(0,-1,speed)
-        elif(self.keyboard_status[ord("d")-ord("a")] == True):
-            self.drive(0,1,speed)
-        else:
+        elif(keyEvent.event_type == "down"):
+            if self.keyboard_status[keyEvent.scan_code] != True:
+                self.keyboard_status[keyEvent.scan_code] = True
+                changed = True
+        
+        if self.keyboard_status[51] == True:
             self.drive(0,0,speed)
+            return "stop"
 
+        if changed:
+            print("KEYBOARD EVENT:\nscancode:",keyEvent.scan_code,"\nevent type:",keyEvent.event_type)
+            if(self.keyboard_status[126] == True and self.keyboard_status[123] == True):
+                self.drive(1,-1,speed)
+                print ("go forward and turn left")
+            elif(self.keyboard_status[126] == True and self.keyboard_status[124] == True):
+                self.drive(1,1,speed)
+                print ("go forward and turn right")
+            elif(self.keyboard_status[125] == True and self.keyboard_status[123] == True):
+                self.drive(-1,-1,speed)
+                print ("go backward and turn left")
+            elif(self.keyboard_status[125] == True and self.keyboard_status[124] == True):
+                self.drive(-1,1,speed)
+                print ("go backward and turn right")
+
+            elif(self.keyboard_status[126] == True):
+                self.drive(1,0,speed)
+                print ("go forward")
+            elif(self.keyboard_status[125] == True):
+                self.drive(-1,0,speed)
+                print ("go backward")
+            elif(self.keyboard_status[123] == True):
+                self.drive(0,-1,speed)
+                print ("turn left")
+            elif(self.keyboard_status[124] == True):
+                self.drive(0,1,speed)
+                print ("turn right")
+            else:
+                self.drive(0,0,speed)
+                print ("immovability")
  
     # Automagically called by Rover class
     def processVideo(self, h264bytes, timestamp_msec):
@@ -144,8 +156,8 @@ class PS3Rover(Revolution):
         # time.sleep(1)
 
         #self.drive(1,-1,True)
-        keyboard.hook(self.keyExpress)
 
+        keyboard.hook(self.keyExpress)
 
         # if keyboard.is_pressed('E+S+C'):
         #     print('ESC')
@@ -159,9 +171,11 @@ class PS3Rover(Revolution):
         #self.moveCameraHorizontal(-axis0)
         axis1 = self.axis_to_dir(self.get_axis(AXIS_PAN_VERT))
         #self.moveCameraVertical(-axis1)
-        
+        #print(time.time())
         # Send video through pipe
+        #print(self.tmpfile.name)
         self.tmpfile.write(h264bytes)
+        return
 
     # Converts axis value to direction
     def axis_to_dir(self, axis):
