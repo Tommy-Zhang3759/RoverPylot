@@ -29,7 +29,7 @@ MIN_AXIS_ABSVAL = 0.01
 SPEED_THRESH = 0.5
 
 # For FFPLAY
-FRAMERATE = 16
+FRAMERATE = 16.99
 DELAY_SEC = 4
 
 from rover import Revolution
@@ -58,12 +58,6 @@ class PS3Rover(Revolution):
         Revolution.__init__(self)
         self.wname = 'Rover Revolution'
 
-        # Set up controller using PyGame
-        '''pygame.display.init()
-        pygame.joystick.init()
-        self.controller = pygame.joystick.Joystick(0)
-        self.controller.init()'''
-
         # Defaults on startup: no stealth; driving camera
         self.stealthIsOn = False
         self.usingTurret = False
@@ -75,7 +69,7 @@ class PS3Rover(Revolution):
         self.tmpfile = tmpfile
 
         #init keyboard status array
-        i = 0
+
         for i in range(0xff):
             self.keyboard_status.append(False)
 

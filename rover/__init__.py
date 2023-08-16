@@ -189,80 +189,7 @@ class Rover:
         self._sendCommandByteRequest(14, [request]) 
          
            
-class Rover20(Rover):
 
-    def __init__(self):
-
-        Rover.__init__(self)
-        
-        # Set up treads
-        self.leftTread = _RoverTread(self, 4)
-        self.rightTread = _RoverTread(self, 1)
-     
-    def close(self):
-        ''' Closes off commuincation with Rover.
-        '''
-
-        Rover.close(self)
-        
-        # Stop moving treads
-        self.setTreads(0, 0)
-                
-    def getBatteryPercentage(self):
-        ''' Returns percentage of battery remaining.
-        '''
-        self._sendCommandByteRequest(251)
-        reply = self._receiveCommandReply(32)
-        return 15 * ord(reply[23])    
-        
-    def setTreads(self, left, right):
-        ''' Sets the speed of the left and right treads (wheels).  + = forward;
-        - = backward; 0 = stop. Values should be in [-1..+1].
-        ''' 
-        currTime = time.time()
-        
-        self.leftTread.update(left)
-        self.rightTread.update(right)
-      
-    def turnLightsOn(self):    
-        ''' Turns the headlights and taillights on.
-        '''
-        self._setLights(8)   
-        
-    
-    def turnLightsOff(self):   
-        ''' Turns the headlights and taillights off.
-        '''
-        self._setLights(9)    
-        
-    def _setLights(self, onoff):    
-        self._sendDeviceControlRequest(onoff, 0)
-
-    def processVideo(self, jpegbytes, timestamp_10msec):
-        ''' Proccesses bytes from a JPEG image streamed from Rover.  
-            Default method is a no-op; subclass and override to do something 
-            interesting.
-        '''
-        pass
-        
-    def processAudio(self, pcmsamples, timestamp_10msec):
-        ''' Proccesses a block of 320 PCM audio samples streamed from Rover.  
-            Audio is sampled at 8192 Hz and quantized to +/- 2^15.
-            Default method is a no-op; subclass and override to do something 
-            interesting.
-        '''
-        pass
-        
-   
-       
-    def _spinWheels(self, wheeldir, speed):    
-        # 1: Right, forward
-        # 2: Right, backward
-        # 4: Left, forward
-        # 5: Left, backward        
-        self._sendDeviceControlRequest(wheeldir, speed) 
-    
-  
 class Revolution(Rover):
 
     def __init__(self):
@@ -367,7 +294,7 @@ class _MediaThread(threading.Thread):
         threading.Thread.__init__(self)
         
         self.rover = rover
-        self.BUFSIZE = 1024
+        self.BUFSIZE = 2048
           
     def run(self):
                                     
