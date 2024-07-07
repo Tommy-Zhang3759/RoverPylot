@@ -29,13 +29,13 @@ MIN_AXIS_ABSVAL = 0.01
 SPEED_THRESH = 0.5
 
 # For FFPLAY
-FRAMERATE = 16.99
-DELAY_SEC = 4
+FRAMERATE = 20
+DELAY_SEC = 2.5
 
 from rover import Revolution
 
 import time
-import keyboard
+import pygame
 import sys
 import signal
 import subprocess
@@ -58,6 +58,12 @@ class PS3Rover(Revolution):
         Revolution.__init__(self)
         self.wname = 'Rover Revolution'
 
+        # Set up controller using PyGame
+        pygame.display.init()
+        pygame.joystick.init()
+        self.controller = pygame.joystick.Joystick(0)
+        self.controller.init()
+
         # Defaults on startup: no stealth; driving camera
         self.stealthIsOn = False
         self.usingTurret = False
@@ -68,108 +74,35 @@ class PS3Rover(Revolution):
         # Saves data to video file for display
         self.tmpfile = tmpfile
 
-        #init keyboard status array
-
-        for i in range(0xff):
-            self.keyboard_status.append(False)
-
-    keyboard_status = []
-
-    def keyExpress(self, keyEvent):
-        speed = False
-        changed = False
-        if(keyEvent.event_type == "up"):
-            if self.keyboard_status[keyEvent.scan_code] != False:
-                self.keyboard_status[keyEvent.scan_code] = False
-                changed = True
-
-        elif(keyEvent.event_type == "down"):
-            if self.keyboard_status[keyEvent.scan_code] != True:
-                self.keyboard_status[keyEvent.scan_code] = True
-                changed = True
-        
-        if self.keyboard_status[51] == True:
-            self.drive(0,0,speed)
-            return "stop"
-
-        if changed:
-            print("KEYBOARD EVENT:\nscancode:",keyEvent.scan_code,"\nevent type:",keyEvent.event_type)
-            if(self.keyboard_status[126] == True and self.keyboard_status[123] == True):
-                self.drive(1,-1,speed)
-                print ("go forward and turn left")
-            elif(self.keyboard_status[126] == True and self.keyboard_status[124] == True):
-                self.drive(1,1,speed)
-                print ("go forward and turn right")
-            elif(self.keyboard_status[125] == True and self.keyboard_status[123] == True):
-                self.drive(-1,-1,speed)
-                print ("go backward and turn left")
-            elif(self.keyboard_status[125] == True and self.keyboard_status[124] == True):
-                self.drive(-1,1,speed)
-                print ("go backward and turn right")
-
-            elif(self.keyboard_status[126] == True):
-                self.drive(1,0,speed)
-                print ("go forward")
-            elif(self.keyboard_status[125] == True):
-                self.drive(-1,0,speed)
-                print ("go backward")
-            elif(self.keyboard_status[123] == True):
-                self.drive(0,-1,speed)
-                print ("turn left")
-            elif(self.keyboard_status[124] == True):
-                self.drive(0,1,speed)
-                print ("turn right")
-            else:
-                self.drive(0,0,speed)
-                print ("immovability")
- 
     # Automagically called by Rover class
     def processVideo(self, h264bytes, timestamp_msec):
 
         # Update controller events
-        '''pygame.event.pump()'''
+        pygame.event.pump()
 
         # Toggle stealth mode (lights off / infrared camera on)
-        '''self.stealthIsOn = self.checkButton(self.stealthIsOn, BUTTON_STEALTH, self.turnStealthOn, self.turnStealthOff)
-        '''
+        self.stealthIsOn = self.checkButton(self.stealthIsOn, BUTTON_STEALTH, self.turnStealthOn, self.turnStealthOff)
 
         # Toggle stealth mode (lights off / infrared camera on)
-        '''self.usingTurret = self.checkButton(self.usingTurret, BUTTON_TURRET, self.useTurretCamera,
+        self.usingTurret = self.checkButton(self.usingTurret, BUTTON_TURRET, self.useTurretCamera,
                                             self.useDrivingCamera)
-        '''
 
-        
         # Use right joystick to drive
         axis2 = self.get_axis(2)
         axis3 = self.get_axis(3)
         goslow = False if abs(axis3) > SPEED_THRESH or abs(axis2) > SPEED_THRESH else True
         wheeldir = -self.axis_to_dir(axis3)
         steerdir = self.axis_to_dir(axis2)
-        #self.drive(wheeldir, steerdir, goslow)
-
-        # time.sleep(1)
-
-        #self.drive(1,-1,True)
-
-        keyboard.hook(self.keyExpress)
-
-        # if keyboard.is_pressed('E+S+C'):
-        #     print('ESC')
-
-        # time.sleep(1)
-
-        # self.drive(-1,0,True)
+        self.drive(wheeldir, steerdir, goslow)
 
         # Use left joystick to control turret camera
         axis0 = self.axis_to_dir(self.get_axis(AXIS_PAN_HORZ))
-        #self.moveCameraHorizontal(-axis0)
+        self.moveCameraHorizontal(-axis0)
         axis1 = self.axis_to_dir(self.get_axis(AXIS_PAN_VERT))
-        #self.moveCameraVertical(-axis1)
-        #print(time.time())
+        self.moveCameraVertical(-axis1)
+
         # Send video through pipe
-        #print(self.tmpfile.name)
         self.tmpfile.write(h264bytes)
-        return
 
     # Converts axis value to direction
     def axis_to_dir(self, axis):
@@ -186,8 +119,7 @@ class PS3Rover(Revolution):
     # Returns axis value when outside noise threshold, else 0
     def get_axis(self, index):
 
-        #value = self.controller.get_axis(index)
-        value = 1
+        value = self.controller.get_axis(index)
 
         if value > MIN_AXIS_ABSVAL:
             return value
@@ -197,7 +129,7 @@ class PS3Rover(Revolution):
             return 0
 
     # Handles button bounce by waiting a specified time between button presses
-    '''def checkButton(self, flag, buttonID, onRoutine=None, offRoutine=None):
+    def checkButton(self, flag, buttonID, onRoutine=None, offRoutine=None):
         if self.controller.get_button(buttonID):
             if (time.time() - self.lastButtonTime) > MIN_BUTTON_LAG_SEC:
                 self.lastButtonTime = time.time()
@@ -210,7 +142,7 @@ class PS3Rover(Revolution):
                         onRoutine()
                     flag = True
         return flag
-    '''
+
 
 # main -----------------------------------------------------------------------------------
 
